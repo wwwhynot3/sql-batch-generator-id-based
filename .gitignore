@@ -1,0 +1,46 @@
+/target/
+
+id_slice.sql
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# 备份文件
+**/*.rs.bk
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+*.code-workspace
+
+# JetBrains (IntelliJ, CLion, RustRover, PyCharm...)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim / Emacs / Sublime
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
