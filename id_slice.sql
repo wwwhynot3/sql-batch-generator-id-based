@@ -1,20 +1,10 @@
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 1 AND 1000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 1001 AND 2000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 2001 AND 3000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 3001 AND 4000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 4001 AND 5000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 5001 AND 6000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 6001 AND 7000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 7001 AND 8000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 8001 AND 9000 AND (channel != 'ANEXT');
-update rec_outer_recon_channel_bill
-set recResult = 'Init' WHERE id BETWEEN 9001 AND 10000 AND (channel != 'ANEXT');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 1 AND 10 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 11 AND 20 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 21 AND 30 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 31 AND 40 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 41 AND 50 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 51 AND 60 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 61 AND 70 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 71 AND 80 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 81 AND 90 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
+UPDATE bank_statements_detail AS t1 JOIN bank_statements_detail AS t2 ON t2.channelCode = 'LIGHTSPEED' AND t2.fundType = 'PaymentIn' AND t1.transactionNo = t2.transactionNo AND t2.detailType = 'Original' SET t1.originalDetailId = t2.detailId WHERE t1.id BETWEEN 91 AND 100 AND (t1.channelCode = 'LIGHTSPEED' AND t1.detailType = 'Split');
