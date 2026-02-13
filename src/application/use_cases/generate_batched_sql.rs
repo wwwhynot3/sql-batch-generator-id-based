@@ -25,9 +25,8 @@ impl GenerateBatchedSqlUseCase {
             &command.primary_key,
         )?;
 
-        let output_file = File::create(&command.output_path).with_context(|| {
-            format!("Unable to create file: {}", command.output_path.display())
-        })?;
+        let output_file = File::create(&command.output_path)
+            .with_context(|| format!("Unable to create file: {}", command.output_path.display()))?;
         let mut output_writer = BufWriter::new(output_file);
 
         let mut generated_batch_count = 0usize;

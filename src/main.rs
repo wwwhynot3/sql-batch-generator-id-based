@@ -11,7 +11,7 @@ use crate::interfaces::cli::collect_generate_command;
 
 fn main() -> Result<()> {
     let command = collect_generate_command()?;
-    let use_case = GenerateBatchedSqlUseCase::default();
+    let use_case = GenerateBatchedSqlUseCase;
 
     println!("{}", style("Generating batched SQL...").cyan());
     let result = use_case.execute(command)?;

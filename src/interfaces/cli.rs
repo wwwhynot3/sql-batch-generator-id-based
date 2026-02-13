@@ -9,8 +9,7 @@ use console::style;
 use dialoguer::{Editor, Input, Select, theme::ColorfulTheme};
 
 use crate::{
-    application::commands::GenerateBatchedSqlCommand,
-    domain::sql_dialect::SqlDialectKind,
+    application::commands::GenerateBatchedSqlCommand, domain::sql_dialect::SqlDialectKind,
 };
 
 const DEFAULT_BATCH_SIZE: usize = 50_000;
@@ -219,4 +218,133 @@ fn ensure_non_empty_value(value: String, field_name: &str) -> Result<String> {
         return Err(anyhow!("{field_name} must not be empty"));
     }
     Ok(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fs,
+        path::PathBuf,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    use clap::Parser;
+
+    use super::{CliArgs, collect_command_from_args};
+
+    fn build_temp_sql_file(content: &str) -> PathBuf {
+        let unique_suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should be after unix epoch")
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("sql_id_slicer_cli_{unique_suffix}.sql"));
+        fs::write(&path, content).expect("temp sql file should be written");
+        path
+    }
+
+    #[test]
+    fn parses_args_mode_with_inline_sql_and_primary_key() {
+        let args = CliArgs::try_parse_from([
+            "sql-id-slicer",
+            "--start-id",
+            "1",
+            "--end-id",
+            "10",
+            "--sql",
+            "DELETE FROM users",
+            "--primary-key",
+            "u.user_id",
+            "--dialect",
+            "postgres",
+            "--output",
+            "out.sql",
+        ])
+        .expect("cli args should parse");
+
+        let command = collect_command_from_args(args).expect("command should be created");
+
+        assert_eq!(command.start_id, 1);
+        assert_eq!(command.end_id, 10);
+        assert_eq!(command.raw_sql, "DELETE FROM users");
+        assert_eq!(command.primary_key, "u.user_id");
+        assert_eq!(command.output_path, PathBuf::from("out.sql"));
+        assert_eq!(command.dialect_kind.as_str(), "postgres");
+    }
+
+    #[test]
+    fn parses_args_mode_with_sql_file() {
+        let sql_file = build_temp_sql_file("UPDATE users SET active = 1");
+
+        let args = CliArgs::try_parse_from([
+            "sql-id-slicer",
+            "--start-id",
+            "100",
+            "--end-id",
+            "200",
+            "--sql-file",
+            sql_file
+                .to_str()
+                .expect("temp sql path should be valid utf8 for test"),
+        ])
+        .expect("cli args should parse");
+
+        let command = collect_command_from_args(args).expect("command should be created");
+        assert_eq!(command.raw_sql, "UPDATE users SET active = 1");
+
+        fs::remove_file(sql_file).expect("temp sql file should be removed");
+    }
+
+    #[test]
+    fn rejects_when_both_sql_and_sql_file_are_provided() {
+        let sql_file = build_temp_sql_file("SELECT 1");
+
+        let args = CliArgs::try_parse_from([
+            "sql-id-slicer",
+            "--start-id",
+            "1",
+            "--end-id",
+            "2",
+            "--sql",
+            "SELECT 1",
+            "--sql-file",
+            sql_file
+                .to_str()
+                .expect("temp sql path should be valid utf8 for test"),
+        ])
+        .expect("cli args should parse");
+
+        let error = collect_command_from_args(args).expect_err("should reject dual sql sources");
+        assert!(
+            error
+                .to_string()
+                .contains("Please provide only one of --sql or --sql-file")
+        );
+
+        fs::remove_file(sql_file).expect("temp sql file should be removed");
+    }
+
+    #[test]
+    fn rejects_when_start_or_end_id_missing_in_args_mode() {
+        let missing_start =
+            CliArgs::try_parse_from(["sql-id-slicer", "--end-id", "5", "--sql", "SELECT 1"])
+                .expect("cli args should parse");
+        let error = collect_command_from_args(missing_start)
+            .expect_err("missing start id should be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("--start-id is required when using argument mode")
+        );
+
+        let missing_end =
+            CliArgs::try_parse_from(["sql-id-slicer", "--start-id", "1", "--sql", "SELECT 1"])
+                .expect("cli args should parse");
+        let error =
+            collect_command_from_args(missing_end).expect_err("missing end id should be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("--end-id is required when using argument mode")
+        );
+    }
 }

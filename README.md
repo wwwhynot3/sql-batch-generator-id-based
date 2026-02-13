@@ -1,69 +1,100 @@
 # SQL Batch Slicer (ID-Based)
 
+A lightweight CLI that slices one SQL statement into multiple ID-range batches.
 
-A lightweight, interactive CLI tool that splits massive SQL operations (UPDATE/DELETE) into small, safe batches based on ID ranges.
+It is designed for safer large-scale UPDATE/DELETE/SELECT operations by generating one statement per ID range and writing all batches to a file.
 
-It helps avoid long table locks and timeouts when dealing with large datasets.
+## Features
 
-✨ Features
-Interactive UI: Built with inquire for easy input validation.
+- SQL AST parsing with `sqlparser` (no regex-based SQL rewriting).
+- Supports `SELECT`, `UPDATE`, and `DELETE` statements.
+- Appends `BETWEEN start_id AND end_id` condition into existing `WHERE` or creates one when missing.
+- Custom primary key input (default `id`).
+- If primary key is unqualified (for example `id`), it is prefixed with the main table alias when an alias exists (for example `u.id`).
+- If primary key is already qualified (for example `users.id`), it is kept as-is.
+- Supports selectable SQL dialects: `generic`, `mysql`, `postgres`, `sqlite`, `mssql`, `snowflake`, `duckdb`.
+- Supports both interactive mode and CLI argument mode.
 
-Smart Parsing:
+## Quick Start
 
-Automatically removes existing ORDER BY and LIMIT clauses.
+### Prerequisites
 
-Intelligently appends the ID range to existing WHERE conditions.
+- Rust + Cargo installed.
 
-External Editor: Opens your default text editor (Vim, Nano, VSCode) for SQL input.
+### Run (interactive mode)
 
-High Performance: Streams output directly to disk (id_slice.sql), keeping memory usage low.
-
-🚀 Quick Start
-Prerequisites
-Rust & Cargo installed.
-
-Installation & Run
-Bash
-## 1. Clone the repo
-git clone https://github.com/your-username/sql-batch-slicer.git
-cd sql-batch-slicer
-
-## 2. Run
+```bash
 cargo run --release
-📖 Usage
-Start/End ID: Enter the primary key range (e.g., 1 to 100000).
+```
 
-Batch Size: Enter how many rows per batch (default: 50000).
+When no arguments are provided, the tool enters interactive mode and asks for:
 
-Input SQL: The tool opens your system editor. Paste your original SQL.
+- Start ID / End ID
+- Batch size
+- Primary key
+- SQL dialect
+- SQL source (editor or file)
+- Output path
 
-Output: The generated SQLs are saved to id_slice.sql.
+### Run (argument mode)
 
-Example
-Parameters:
+```bash
+cargo run --release -- \
+	--start-id 1 \
+	--end-id 100000 \
+	--batch-size 50000 \
+	--primary-key id \
+	--dialect postgres \
+	--sql-file ./input.sql \
+	--output id_slice.sql
+```
 
-Start: 1, End: 100, Batch: 50
+You must provide one of:
+
+- `--sql "..."`
+- `--sql-file <path>`
+
+## CLI Arguments
+
+- `-s, --start-id <i128>`: Start ID (required in argument mode)
+- `-e, --end-id <i128>`: End ID (required in argument mode)
+- `-b, --batch-size <usize>`: Batch size (default `50000`)
+- `-q, --sql <string>`: Raw SQL text
+- `-f, --sql-file <path>`: SQL file path
+- `-o, --output <path>`: Output file (default `id_slice.sql`)
+- `-k, --primary-key <string>`: Primary key column (default `id`)
+- `-d, --dialect <dialect>`: SQL dialect (default `generic`)
+
+## Example
 
 Input SQL:
 
-SQL
-UPDATE users SET active = 0 WHERE created_at < '2023-01-01' ORDER BY id DESC LIMIT 1000;
-Generated Output (id_slice.sql):
+```sql
+UPDATE users u SET active = 0 WHERE status = 'old';
+```
 
-SQL
-UPDATE users SET active = 0 WHERE id BETWEEN 1 AND 50 AND (created_at < '2023-01-01');
-UPDATE users SET active = 0 WHERE id BETWEEN 51 AND 100 AND (created_at < '2023-01-01');
-⚙️ How it works
-Clean: Removes tailing ORDER BY or LIMIT from the input using Regex.
+Parameters:
 
-Locate: Finds the last WHERE clause.
+- `start_id = 1`
+- `end_id = 100`
+- `batch_size = 50`
+- `primary_key = id`
 
-Inject: Inserts id BETWEEN start AND end and wraps original conditions in parentheses.
+Generated output:
 
-Stream: Iterates through the ID range and writes lines to the file.
+```sql
+UPDATE users AS u SET active = 0 WHERE u.id BETWEEN 1 AND 50 AND (status = 'old');
+UPDATE users AS u SET active = 0 WHERE u.id BETWEEN 51 AND 100 AND (status = 'old');
+```
 
-⚠️ Note
-Column Name: The tool hardcodes the primary key column as id. If your table uses user_id or similar, you must modify the writeln! macro in main.rs.
+## Validation
 
-📄 License
-MIT License.
+```bash
+cargo fmt --all
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+## License
+
+MIT

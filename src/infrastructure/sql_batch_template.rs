@@ -2,7 +2,8 @@ use anyhow::{Context, Result, anyhow};
 use sqlparser::{
     ast::{BinaryOperator, Expr, Ident, SetExpr, Statement, TableFactor, Value},
     dialect::{
-        DuckDbDialect, GenericDialect, MsSqlDialect, MySqlDialect, PostgreSqlDialect, SQLiteDialect, SnowflakeDialect
+        DuckDbDialect, GenericDialect, MsSqlDialect, MySqlDialect, PostgreSqlDialect,
+        SQLiteDialect, SnowflakeDialect,
     },
     parser::Parser,
 };
@@ -21,11 +22,7 @@ impl SqlParserBatchTemplate {
             return Err(anyhow!("Input SQL must not be empty"));
         }
 
-        let statements = parse_single_statement(raw_sql, dialect_kind)?;
-        let mut statement_iter = statements.into_iter();
-        let statement = statement_iter
-            .next()
-            .ok_or_else(|| anyhow!("Input SQL must contain exactly one statement"))?;
+        let statement = parse_single_statement(raw_sql, dialect_kind)?;
 
         let table_alias = extract_main_table_alias(&statement);
         let qualified_primary_key_expr = build_primary_key_expr(primary_key, table_alias)?;
@@ -40,14 +37,8 @@ impl SqlParserBatchTemplate {
         let batch_condition_expr = Expr::Between {
             expr: Box::new(self.qualified_primary_key_expr.clone()),
             negated: false,
-            low: Box::new(Expr::Value(Value::Number(
-                start_id.to_string(),
-                false,
-            ))),
-            high: Box::new(Expr::Value(Value::Number(
-                end_id.to_string(),
-                false,
-            ))),
+            low: Box::new(Expr::Value(Value::Number(start_id.to_string(), false))),
+            high: Box::new(Expr::Value(Value::Number(end_id.to_string(), false))),
         };
 
         let mut statement_for_batch = self.base_statement.clone();
@@ -56,8 +47,8 @@ impl SqlParserBatchTemplate {
     }
 }
 
-fn parse_single_statement(raw_sql: &str, dialect_kind: SqlDialectKind) -> Result<Vec<Statement>> {
-    match dialect_kind {
+fn parse_single_statement(raw_sql: &str, dialect_kind: SqlDialectKind) -> Result<Statement> {
+    let statements = match dialect_kind {
         SqlDialectKind::Generic => Parser::parse_sql(&GenericDialect {}, raw_sql),
         SqlDialectKind::MySql => Parser::parse_sql(&MySqlDialect {}, raw_sql),
         SqlDialectKind::PostgreSql => Parser::parse_sql(&PostgreSqlDialect {}, raw_sql),
@@ -66,17 +57,20 @@ fn parse_single_statement(raw_sql: &str, dialect_kind: SqlDialectKind) -> Result
         SqlDialectKind::Snowflake => Parser::parse_sql(&SnowflakeDialect {}, raw_sql),
         SqlDialectKind::DuckDb => Parser::parse_sql(&DuckDbDialect {}, raw_sql),
     }
-    .context("Unable to parse SQL with selected dialect")
-    .and_then(|statements| {
-        if statements.len() != 1 {
-            Err(anyhow!(
-                "Input SQL must contain exactly one statement, but got {}",
-                statements.len()
-            ))
-        } else {
-            Ok(statements)
-        }
-    })
+    .context("Unable to parse SQL with selected dialect")?;
+
+    let statement_count = statements.len();
+    if statement_count != 1 {
+        return Err(anyhow!(
+            "Input SQL must contain exactly one statement, but got {}",
+            statement_count
+        ));
+    }
+
+    statements
+        .into_iter()
+        .next()
+        .ok_or_else(|| anyhow!("Input SQL must contain exactly one statement"))
 }
 
 fn build_primary_key_expr(primary_key: &str, table_alias: Option<&str>) -> Result<Expr> {
@@ -117,14 +111,14 @@ fn extract_main_table_alias(statement: &Statement) -> Option<&str> {
         Statement::Update { table, .. } => extract_alias_from_table_factor(&table.relation),
         Statement::Delete(delete_statement) => match &delete_statement.from {
             sqlparser::ast::FromTable::WithFromKeyword(table) => table,
-            sqlparser::ast::FromTable::WithoutKeyword(table) => table
-        } .first()
-            .and_then(|table_with_joins| extract_alias_from_table_factor(&table_with_joins.relation)),
+            sqlparser::ast::FromTable::WithoutKeyword(table) => table,
+        }
+        .first()
+        .and_then(|table_with_joins| extract_alias_from_table_factor(&table_with_joins.relation)),
         Statement::Query(query) => match query.body.as_ref() {
-            SetExpr::Select(select) => select
-                .from
-                .first()
-                .and_then(|table_with_joins| extract_alias_from_table_factor(&table_with_joins.relation)),
+            SetExpr::Select(select) => select.from.first().and_then(|table_with_joins| {
+                extract_alias_from_table_factor(&table_with_joins.relation)
+            }),
             _ => None,
         },
         _ => None,
@@ -133,7 +127,9 @@ fn extract_main_table_alias(statement: &Statement) -> Option<&str> {
 
 fn extract_alias_from_table_factor(table_factor: &TableFactor) -> Option<&str> {
     match table_factor {
-        TableFactor::Table { alias, .. } => alias.as_ref().map(|table_alias| table_alias.name.value.as_str()),
+        TableFactor::Table { alias, .. } => alias
+            .as_ref()
+            .map(|table_alias| table_alias.name.value.as_str()),
         _ => None,
     }
 }
@@ -216,5 +212,37 @@ mod tests {
             sql,
             "DELETE FROM users AS u WHERE users.id BETWEEN 10 AND 20 AND (u.status = 'old')"
         );
+    }
+
+    #[test]
+    fn prefixes_unqualified_primary_key_with_main_alias_in_join_query() {
+        let template = SqlParserBatchTemplate::parse(
+            "SELECT u.id, o.id FROM users u JOIN orders o ON o.user_id = u.id WHERE o.state = 'paid'",
+            SqlDialectKind::Generic,
+            "id",
+        )
+        .expect("template should be parsed");
+
+        let sql = template
+            .render_for_range(100, 199)
+            .expect("sql should be rendered");
+
+        assert_eq!(
+            sql,
+            "SELECT u.id, o.id FROM users AS u JOIN orders AS o ON o.user_id = u.id WHERE u.id BETWEEN 100 AND 199 AND (o.state = 'paid')"
+        );
+    }
+
+    #[test]
+    fn adds_where_clause_when_statement_has_no_selection() {
+        let template =
+            SqlParserBatchTemplate::parse("DELETE FROM users", SqlDialectKind::Generic, "id")
+                .expect("template should be parsed");
+
+        let sql = template
+            .render_for_range(1, 10)
+            .expect("sql should be rendered");
+
+        assert_eq!(sql, "DELETE FROM users WHERE id BETWEEN 1 AND 10");
     }
 }
