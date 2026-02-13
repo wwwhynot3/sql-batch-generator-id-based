@@ -1,20 +1,20 @@
-select * from user WHERE id BETWEEN 1 AND 50000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 50001 AND 100000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 100001 AND 150000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 150001 AND 200000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 200001 AND 250000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 250001 AND 300000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 300001 AND 350000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 350001 AND 400000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 400001 AND 450000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 450001 AND 500000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 500001 AND 550000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 550001 AND 600000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 600001 AND 650000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 650001 AND 700000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 700001 AND 750000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 750001 AND 800000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 800001 AND 850000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 850001 AND 900000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 900001 AND 950000 AND (name like '%凌%');
-select * from user WHERE id BETWEEN 950001 AND 1000000 AND (name like '%凌%');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 1 AND 1000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 1001 AND 2000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 2001 AND 3000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 3001 AND 4000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 4001 AND 5000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 5001 AND 6000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 6001 AND 7000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 7001 AND 8000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 8001 AND 9000 AND (channel != 'ANEXT');
+update rec_outer_recon_channel_bill
+set recResult = 'Init' WHERE id BETWEEN 9001 AND 10000 AND (channel != 'ANEXT');
