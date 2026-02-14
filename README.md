@@ -95,6 +95,42 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
+## GitHub Actions (CI/CD)
+
+This project includes automation under `.github/workflows`:
+
+- `ci.yml`: Runs format check, clippy, tests, and release-target build checks (including Linux ARM64 cross-build) on push/PR.
+- `release.yml`: Builds release binaries and packages for:
+	- Windows amd64 (`x86_64-pc-windows-msvc`)
+	- macOS x64 (`x86_64-apple-darwin`)
+	- macOS arm64 (`aarch64-apple-darwin`)
+	- Linux amd64 (`x86_64-unknown-linux-gnu`)
+	- Linux arm64 (`aarch64-unknown-linux-gnu`)
+	Then publishes GitHub Release assets and a `SHA256SUMS.txt` checksum file.
+- `security.yml`: Runs `cargo audit` on push/PR + weekly schedule, and dependency review on pull requests.
+
+### How to create a release (for beginners)
+
+1. Update version in `Cargo.toml` if needed.
+2. Commit and push your changes.
+3. Create and push a version tag (`v*` or `release*`):
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+After the tag is pushed, GitHub Actions will automatically:
+
+- build binaries,
+- package artifacts,
+- create a GitHub Release,
+- upload packaged files to that release.
+
+### Optional setup
+
+- Enable **Dependabot** in repository settings (config already provided in `.github/dependabot.yml`) to keep Cargo/GitHub Actions dependencies updated automatically.
+
 ## License
 
 MIT
