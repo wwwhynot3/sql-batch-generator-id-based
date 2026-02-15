@@ -164,7 +164,7 @@ fn collect_interactive_command() -> Result<GenerateBatchedSqlCommand> {
     let source_index = Select::with_theme(&theme)
         .with_prompt("SQL source")
         .default(0)
-        .items(&source_options)
+        .items(source_options)
         .interact()?;
 
     let raw_sql = if source_index == 0 {

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, anyhow};
 use sqlparser::{
-    ast::{BinaryOperator, Expr, Ident, SetExpr, Statement, TableFactor, Value},
+    ast::{BinaryOperator, Expr, Ident, SetExpr, Statement, TableFactor, Value, ValueWithSpan},
     dialect::{
         DuckDbDialect, GenericDialect, MsSqlDialect, MySqlDialect, PostgreSqlDialect,
         SQLiteDialect, SnowflakeDialect,
@@ -37,8 +37,14 @@ impl SqlParserBatchTemplate {
         let batch_condition_expr = Expr::Between {
             expr: Box::new(self.qualified_primary_key_expr.clone()),
             negated: false,
-            low: Box::new(Expr::Value(Value::Number(start_id.to_string(), false))),
-            high: Box::new(Expr::Value(Value::Number(end_id.to_string(), false))),
+            low: Box::new(Expr::Value(ValueWithSpan::from(Value::Number(
+                start_id.to_string(),
+                false,
+            )))),
+            high: Box::new(Expr::Value(ValueWithSpan::from(Value::Number(
+                end_id.to_string(),
+                false,
+            )))),
         };
 
         let mut statement_for_batch = self.base_statement.clone();
@@ -108,7 +114,9 @@ fn build_primary_key_expr(primary_key: &str, table_alias: Option<&str>) -> Resul
 
 fn extract_main_table_alias(statement: &Statement) -> Option<&str> {
     match statement {
-        Statement::Update { table, .. } => extract_alias_from_table_factor(&table.relation),
+        Statement::Update(update_statement) => {
+            extract_alias_from_table_factor(&update_statement.table.relation)
+        }
         Statement::Delete(delete_statement) => match &delete_statement.from {
             sqlparser::ast::FromTable::WithFromKeyword(table) => table,
             sqlparser::ast::FromTable::WithoutKeyword(table) => table,
@@ -136,8 +144,8 @@ fn extract_alias_from_table_factor(table_factor: &TableFactor) -> Option<&str> {
 
 fn inject_batch_condition(statement: &mut Statement, batch_condition: Expr) -> Result<()> {
     match statement {
-        Statement::Update { selection, .. } => {
-            merge_selection(selection, batch_condition);
+        Statement::Update(update_statement) => {
+            merge_selection(&mut update_statement.selection, batch_condition);
             Ok(())
         }
         Statement::Delete(delete_statement) => {
@@ -191,7 +199,7 @@ mod tests {
 
         assert_eq!(
             sql,
-            "UPDATE users AS u SET active = 0 WHERE u.id BETWEEN 1 AND 50 AND (status = 'old')"
+            "UPDATE users u SET active = 0 WHERE u.id BETWEEN 1 AND 50 AND (status = 'old')"
         );
     }
 
@@ -210,7 +218,7 @@ mod tests {
 
         assert_eq!(
             sql,
-            "DELETE FROM users AS u WHERE users.id BETWEEN 10 AND 20 AND (u.status = 'old')"
+            "DELETE FROM users u WHERE users.id BETWEEN 10 AND 20 AND (u.status = 'old')"
         );
     }
 
@@ -229,7 +237,7 @@ mod tests {
 
         assert_eq!(
             sql,
-            "SELECT u.id, o.id FROM users AS u JOIN orders AS o ON o.user_id = u.id WHERE u.id BETWEEN 100 AND 199 AND (o.state = 'paid')"
+            "SELECT u.id, o.id FROM users u JOIN orders o ON o.user_id = u.id WHERE u.id BETWEEN 100 AND 199 AND (o.state = 'paid')"
         );
     }
 

@@ -83,3 +83,11 @@ jobs:
 
       - name: Build release binary
         run: cargo build --locked --release --target ${{ matrix.target }}
+        
+  ci-success:
+    name: Final CI Check
+    needs: [quality, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI Success
+        run: echo "All Checks Passed Successfully!"
