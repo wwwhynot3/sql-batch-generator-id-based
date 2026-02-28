@@ -12,7 +12,8 @@ use crate::{
     application::commands::GenerateBatchedSqlCommand, domain::sql_dialect::SqlDialectKind,
 };
 
-const DEFAULT_BATCH_SIZE: usize = 50_000;
+const DEFAULT_BATCH_SIZE: usize = 10_000;
+const DEFAULT_SLEEP_SECONDS: u64 = 1;
 const DEFAULT_OUTPUT: &str = "id_slice.sql";
 const DEFAULT_PRIMARY_KEY: &str = "id";
 
@@ -29,6 +30,8 @@ struct CliArgs {
     end_id: Option<i128>,
     #[arg(long, short = 'b', default_value_t = DEFAULT_BATCH_SIZE)]
     batch_size: usize,
+    #[arg(long, short = 't', default_value_t = DEFAULT_SLEEP_SECONDS)]
+    sleep_seconds: u64,
     #[arg(long, short = 'q', help = "Raw SQL text")]
     sql: Option<String>,
     #[arg(long, short = 'f', help = "Read SQL from file path")]
@@ -88,6 +91,7 @@ fn collect_command_from_args(args: CliArgs) -> Result<GenerateBatchedSqlCommand>
         start_id,
         end_id,
         batch_size: args.batch_size,
+        sleep_seconds: args.sleep_seconds,
         raw_sql,
         output_path: args.output,
         primary_key,
@@ -135,6 +139,11 @@ fn collect_interactive_command() -> Result<GenerateBatchedSqlCommand> {
                 Ok(())
             }
         })
+        .interact_text()?;
+
+    let sleep_seconds: u64 = Input::with_theme(&theme)
+        .with_prompt("Sleep seconds between batches (0 to disable)")
+        .default(DEFAULT_SLEEP_SECONDS)
         .interact_text()?;
 
     let primary_key: String = Input::with_theme(&theme)
@@ -189,6 +198,7 @@ fn collect_interactive_command() -> Result<GenerateBatchedSqlCommand> {
         start_id,
         end_id,
         batch_size,
+        sleep_seconds,
         raw_sql,
         output_path: PathBuf::from(output_name.trim()),
         primary_key: primary_key.trim().to_string(),
@@ -230,7 +240,7 @@ mod tests {
 
     use clap::Parser;
 
-    use super::{CliArgs, collect_command_from_args};
+    use super::{CliArgs, DEFAULT_BATCH_SIZE, DEFAULT_SLEEP_SECONDS, collect_command_from_args};
 
     fn build_temp_sql_file(content: &str) -> PathBuf {
         let unique_suffix = SystemTime::now()
@@ -267,6 +277,8 @@ mod tests {
         assert_eq!(command.end_id, 10);
         assert_eq!(command.raw_sql, "DELETE FROM users");
         assert_eq!(command.primary_key, "u.user_id");
+        assert_eq!(command.batch_size, DEFAULT_BATCH_SIZE);
+        assert_eq!(command.sleep_seconds, DEFAULT_SLEEP_SECONDS);
         assert_eq!(command.output_path, PathBuf::from("out.sql"));
         assert_eq!(command.dialect_kind.as_str(), "postgres");
     }
@@ -290,8 +302,47 @@ mod tests {
 
         let command = collect_command_from_args(args).expect("command should be created");
         assert_eq!(command.raw_sql, "UPDATE users SET active = 1");
+        assert_eq!(command.sleep_seconds, DEFAULT_SLEEP_SECONDS);
 
         fs::remove_file(sql_file).expect("temp sql file should be removed");
+    }
+
+    #[test]
+    fn parses_custom_sleep_seconds_in_args_mode() {
+        let args = CliArgs::try_parse_from([
+            "sql-id-slicer",
+            "--start-id",
+            "1",
+            "--end-id",
+            "10",
+            "--sql",
+            "SELECT * FROM users",
+            "--sleep-seconds",
+            "0",
+        ])
+        .expect("cli args should parse");
+
+        let command = collect_command_from_args(args).expect("command should be created");
+        assert_eq!(command.sleep_seconds, 0);
+    }
+
+    #[test]
+    fn parses_sleep_seconds_from_short_flag() {
+        let args = CliArgs::try_parse_from([
+            "sql-id-slicer",
+            "--start-id",
+            "1",
+            "--end-id",
+            "10",
+            "--sql",
+            "SELECT * FROM users",
+            "-t",
+            "2",
+        ])
+        .expect("cli args should parse");
+
+        let command = collect_command_from_args(args).expect("command should be created");
+        assert_eq!(command.sleep_seconds, 2);
     }
 
     #[test]

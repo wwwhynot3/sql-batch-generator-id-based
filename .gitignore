@@ -44,3 +44,4 @@ $RECYCLE.BIN/
 *~
 *.sublime-workspace
 *.sublime-project
+.id_slice.sql
