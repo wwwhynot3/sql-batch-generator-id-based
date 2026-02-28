@@ -7,6 +7,7 @@ pub struct GenerateBatchedSqlCommand {
     pub start_id: i128,
     pub end_id: i128,
     pub batch_size: usize,
+    pub sleep_seconds: u64,
     pub raw_sql: String,
     pub output_path: PathBuf,
     pub primary_key: String,
