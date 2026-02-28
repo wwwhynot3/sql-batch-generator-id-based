@@ -42,7 +42,8 @@ When no arguments are provided, the tool enters interactive mode and asks for:
 cargo run --release -- \
 	--start-id 1 \
 	--end-id 100000 \
-	--batch-size 50000 \
+	--batch-size 10000 \
+	--sleep-seconds 1 \
 	--primary-key id \
 	--dialect postgres \
 	--sql-file ./input.sql \
@@ -58,12 +59,15 @@ You must provide one of:
 
 - `-s, --start-id <i128>`: Start ID (required in argument mode)
 - `-e, --end-id <i128>`: End ID (required in argument mode)
-- `-b, --batch-size <usize>`: Batch size (default `50000`)
+- `-b, --batch-size <usize>`: Batch size (default `10000`)
+- `-t, --sleep-seconds <u64>`: Sleep seconds between each batch SQL (default `1`, set `0` to disable)
 - `-q, --sql <string>`: Raw SQL text
 - `-f, --sql-file <path>`: SQL file path
 - `-o, --output <path>`: Output file (default `id_slice.sql`)
 - `-k, --primary-key <string>`: Primary key column (default `id`)
 - `-d, --dialect <dialect>`: SQL dialect (default `generic`)
+
+When `sleep_seconds > 0` but the selected dialect does not support SQL sleep (`generic`, `sqlite`, `duckdb`), the generator prints a warning and continues without inserting sleep statements.
 
 ## Example
 
@@ -78,12 +82,14 @@ Parameters:
 - `start_id = 1`
 - `end_id = 100`
 - `batch_size = 50`
+- `sleep_seconds = 1`
 - `primary_key = id`
 
 Generated output:
 
 ```sql
 UPDATE users AS u SET active = 0 WHERE u.id BETWEEN 1 AND 50 AND (status = 'old');
+SELECT SLEEP(1);
 UPDATE users AS u SET active = 0 WHERE u.id BETWEEN 51 AND 100 AND (status = 'old');
 ```
 
