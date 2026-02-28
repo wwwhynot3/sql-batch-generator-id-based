@@ -30,13 +30,15 @@ impl GenerateBatchedSqlUseCase {
         let mut output_writer = BufWriter::new(output_file);
         let ranges = id_batch_slicer.iter_ranges().collect::<Vec<_>>();
         let sleep_statement = command.dialect_kind.sleep_statement(command.sleep_seconds);
-        if command.sleep_seconds > 0 && sleep_statement.is_none()
-            && let Some(reason) = command.dialect_kind.sleep_unsupported_reason() {
-                eprintln!(
-                    "Warning: sleep_seconds is set to {}, but dialect '{}' does not support SQL sleep; {}.",
-                    command.sleep_seconds, command.dialect_kind, reason
-                );
-            }
+        if command.sleep_seconds > 0
+            && sleep_statement.is_none()
+            && let Some(reason) = command.dialect_kind.sleep_unsupported_reason()
+        {
+            eprintln!(
+                "Warning: sleep_seconds is set to {}, but dialect '{}' does not support SQL sleep; {}.",
+                command.sleep_seconds, command.dialect_kind, reason
+            );
+        }
 
         let mut generated_batch_count = 0usize;
         for (index, id_range) in ranges.iter().enumerate() {
@@ -48,10 +50,9 @@ impl GenerateBatchedSqlUseCase {
             writeln!(output_writer, "{rendered_sql}")?;
 
             let has_next_batch = index + 1 < ranges.len();
-            if has_next_batch
-                && let Some(statement) = &sleep_statement {
-                    writeln!(output_writer, "{statement}")?;
-                }
+            if has_next_batch && let Some(statement) = &sleep_statement {
+                writeln!(output_writer, "{statement}")?;
+            }
 
             generated_batch_count += 1;
         }
