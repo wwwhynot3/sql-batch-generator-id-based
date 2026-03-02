@@ -93,7 +93,7 @@ jobs:
           Compress-Archive -Path "dist/*" -DestinationPath "${{ steps.meta.outputs.archive_name }}.${{ matrix.archive_ext }}" -Force
 
       - name: Upload packaged artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.meta.outputs.archive_name }}
           path: ${{ steps.meta.outputs.archive_name }}.${{ matrix.archive_ext }}
@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: Download packaged artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
