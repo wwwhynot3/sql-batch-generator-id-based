@@ -42,7 +42,7 @@ impl SqlDialectKind {
         }
 
         match self {
-            SqlDialectKind::MySql => Some(format!("SELECT SLEEP({seconds});")),
+            SqlDialectKind::MySql => Some(format!("DO SLEEP({seconds});")),
             SqlDialectKind::PostgreSql => Some(format!("SELECT pg_sleep({seconds});")),
             SqlDialectKind::MsSql => {
                 let hours = seconds / 3600;
@@ -107,7 +107,7 @@ mod tests {
     fn mysql_sleep_statement_uses_sleep_function() {
         assert_eq!(
             SqlDialectKind::MySql.sleep_statement(2),
-            Some("SELECT SLEEP(2);".to_string())
+            Some("DO SLEEP(2);".to_string())
         );
     }
 
