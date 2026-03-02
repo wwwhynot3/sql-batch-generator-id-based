@@ -110,7 +110,7 @@ mod tests {
         assert!(content.contains("DELETE FROM users WHERE id BETWEEN 1 AND 1;"));
         assert!(content.contains("DELETE FROM users WHERE id BETWEEN 2 AND 2;"));
         assert!(content.contains("DELETE FROM users WHERE id BETWEEN 3 AND 3;"));
-        assert_eq!(content.matches("SELECT SLEEP(1);").count(), 2);
+        assert_eq!(content.matches("DO SLEEP(1);").count(), 2);
 
         fs::remove_file(output_path).expect("temp output file should be removed");
     }
